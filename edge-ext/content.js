@@ -9,7 +9,7 @@
   window.__jpVocabInjected = true;
 
   /** 构建号：改了样式后用它确认浏览器跑的是新代码，而不是旧缓存。 */
-  const BUILD = '0.5.1';
+  const BUILD = '0.6.0';
 
   const MAX_SELECTION = 24;   // 超过这个长度当句子处理，不弹查词
   const MIN_SELECTION = 1;
@@ -49,6 +49,8 @@
   let anchorRect = null;
   let debounceTimer = 0;
   let lastSelectionText = '';
+  /** 本次查词的请求 id：用于把「分词器就绪后」的升级结果对回同一张卡片 */
+  let currentRequestId = '';
   /** 结果卡位置：'top-right'（默认，网页右上角）| 'anchor'（所选词旁边） */
   let cardPosition = 'top-right';
 
@@ -286,13 +288,20 @@
 
   async function openCard(wordOverride, { exact = false } = {}) {
     const word = wordOverride || currentWord;
+    currentRequestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     stage = 'card';
     layer.className = 'layer card';
     layer.innerHTML = '<div class="msg"><span class="spin"></span>　查询中…</div>';
     layer.style.display = 'block';
     place(anchorRect || { left: 20, top: 20, width: 0, bottom: 40 }, 360, { card: true });
 
-    const res = await chrome.runtime.sendMessage({ type: 'lookup', word, sentence: currentContext, exact });
+    const res = await chrome.runtime.sendMessage({
+      type: 'lookup',
+      word,
+      sentence: currentContext,
+      exact,
+      requestId: currentRequestId,
+    });
     if (stage !== 'card') return;
     if (!res?.ok) {
       const cands = Array.isArray(res?.candidates) ? res.candidates : [];
@@ -411,6 +420,19 @@
     if (stage === 'card') place(anchorRect, 360, { card: true });
     else place(anchorRect, 76);
   }, { passive: true });
+
+  // 分词器就绪后 background 会推一次更精确的结果，替换当前卡片内容
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg?.type !== 'jp-vocab:upgrade') return;
+    if (msg.requestId !== currentRequestId || stage !== 'card') return;
+    const result = msg.result;
+    if (!result?.entry) return;
+    currentEntry = result.entry;
+    currentCandidates = Array.isArray(result.candidates) ? result.candidates : [];
+    currentChain = Array.isArray(result.chain) ? result.chain : [];
+    currentSource = result.lemmaSource || 'none';
+    renderCard();
+  });
 
   // 结果卡位置偏好存在浏览器端（不写共享配置：它是纯 UI 偏好）
   try {

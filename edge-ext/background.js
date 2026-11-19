@@ -58,18 +58,21 @@ async function fetchEntry(word) {
  * exact=true 时跳过还原（用户在候选条上明确点了某一层），
  * 否则点「惹かれる」会被立刻再深化回「惹く」。
  */
-async function resolveAndLookup(word, sentence, exact = false) {
+async function resolveAndLookup(word, sentence, exact = false, presetTokenizer = null) {
   const settings = await loadSettings();
   const surface = String(word || '').trim();
   if (!surface) return null;
 
-  let tokenizer = null;
-  if (!exact) {
+  let tokenizer = presetTokenizer;
+  let deferred = false;
+  if (!exact && !tokenizer) {
     try {
-      tokenizer = await withTimeout(getTokenizer(), 1500);
+      // 不再干等 1.5s：给 250ms，拿不到就先用规则层出结果，就绪后再升级
+      tokenizer = await withTimeout(getTokenizer(), 250);
     } catch {
       tokenizer = null;
     }
+    if (!tokenizer) deferred = true;
   }
 
   const built = exact
@@ -92,7 +95,7 @@ async function resolveAndLookup(word, sentence, exact = false) {
   if (!hit) {
     return {
       entry: null, lemma: built.lemma, lemmaSource: built.source,
-      surface, candidates: [built.lemma].filter(Boolean), chain: built.chain, settings,
+      surface, candidates: [built.lemma].filter(Boolean), chain: built.chain, settings, deferred,
     };
   }
 
@@ -127,6 +130,7 @@ async function resolveAndLookup(word, sentence, exact = false) {
     candidates,
     chain: [...candidates].reverse(),
     settings,
+    deferred,
   };
 }
 
@@ -163,6 +167,26 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           });
         }
         sendResponse({ ok: true, ...result });
+
+        // 分词器还没就绪：立刻给规则层结果，就绪后重算一次并推给页面
+        if (result.deferred && msg.requestId && sender?.tab?.id) {
+          getTokenizer()
+            .then(async (tk) => {
+              if (!tk) return;
+              const better = await resolveAndLookup(msg.word, msg.sentence, Boolean(msg.exact), tk);
+              if (!better?.entry) return;
+              const changed = better.lemma !== result.lemma
+                || better.entry.word !== result.entry.word
+                || (better.candidates || []).join('|') !== (result.candidates || []).join('|');
+              if (!changed) return;
+              chrome.tabs.sendMessage(sender.tab.id, {
+                type: 'jp-vocab:upgrade',
+                requestId: msg.requestId,
+                result: better,
+              });
+            })
+            .catch(() => {});
+        }
       } catch (error) {
         sendResponse({ ok: false, reason: String(error.message || error) });
       }

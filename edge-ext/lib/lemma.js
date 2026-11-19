@@ -7,7 +7,7 @@
  * 另外提供「变形链」：一个原形本身可能还是另一个词的变形
  * （惹かれる 既是独立词，又是 惹く 的被动），链式还原能一直追到最原本的词。
  */
-import { candidatesFromRules } from './lemma-rules.js';
+import { candidatesFromRules, renyouCandidates } from './lemma-rules.js';
 
 /** kuromoji 的 token 不带偏移量，按表面长度累加补出来。 */
 export function offsetTokens(tokens) {
@@ -55,7 +55,9 @@ export function resolveLemma({ surface, sentence, tokenizer }) {
     try {
       const tokens = offsetTokens(tokenizer.tokenize(sentence));
       const at = sentence.indexOf(text);
-      const token = pickToken(tokens, at, at + text.length);
+      let token = pickToken(tokens, at, at + text.length);
+      // 选中的只是复合词的一部分（お祭り騒ぎ 里的 祭り）时不要拿整词当原形
+      if (token && String(token.surface_form ?? '').length > text.length) token = null;
       const base = token?.basic_form;
       if (base && base !== '*' && base !== text) {
         primary = base;
@@ -115,12 +117,75 @@ export function deepen(lemma, tokenizer) {
  * @param {{surface:string, sentence?:string, tokenizer?:any}} input
  * @returns {{lemma:string, chain:string[], candidates:string[], source:string}}
  */
+/**
+ * 上下文证据：判断这个名词形态是否更像动词的连用形。
+ *
+ * - strong：分词器判为动词，或前面紧邻 が/を/に（谓语用法）——可以改默认层
+ * - weak：后面紧跟名词（连用形+名词的复合）——只加候选，不改默认层
+ * - null：证据不足（句首、お/ご 前缀、其他助词）——不补动词
+ *
+ * @param {any[]} tokens offsetTokens 的结果
+ * @param {number} index 选中词所在 token 下标
+ * @returns {'strong'|'weak'|null}
+ */
+export function verbEvidence(tokens, index) {
+  const cur = tokens?.[index];
+  if (!cur) return null;
+  if (cur.pos === '動詞') return 'strong';
+  const prev = tokens[index - 1];
+  const next = tokens[index + 1];
+  if (prev && prev.pos === '助詞' && ['が', 'を', 'に'].includes(prev.surface_form)) return 'strong';
+  if (prev && prev.pos === '接頭詞') return null;
+  if (next && next.pos === '名詞' && prev) return 'weak';
+  return null;
+}
+
+/**
+ * 没有分词结果时的文字级证据（够用且极便宜）。
+ * @param {string} sentence 选中词所在的句子
+ * @param {string} word 选中词
+ * @returns {'strong'|'weak'|null}
+ */
+export function evidenceFromText(sentence, word) {
+  const s = String(sentence ?? '');
+  const text = String(word ?? '');
+  const at = text ? s.indexOf(text) : -1;
+  if (at < 0) return null;
+  const prev = s[at - 1] ?? '';
+  const next = s[at + text.length] ?? '';
+  if (prev && 'がをに'.includes(prev)) return 'strong';
+  if (prev && 'おご'.includes(prev)) return null; // お祭り 这类接头词
+  if (/[\u4e00-\u9fff]/.test(next)) return 'weak';
+  return null;
+}
+
 export function buildChain({ surface, sentence, tokenizer }) {
   const text = String(surface ?? '').trim();
   const base = resolveLemma({ surface: text, sentence, tokenizer });
-  if (!base.lemma) return { lemma: '', chain: [], candidates: [], source: 'none' };
+  if (!base.lemma) return { lemma: '', chain: [], candidates: [], source: 'none', evidence: null };
+
+  // 证据优先取分词结果，取不到再退回文字判断
+  let evidence = null;
+  if (tokenizer && sentence && sentence.includes(text)) {
+    try {
+      const tokens = offsetTokens(tokenizer.tokenize(sentence));
+      const at = sentence.indexOf(text);
+      const idx = tokens.findIndex((t) => t.surface_form === text && t.start < at + text.length && t.end > at);
+      if (idx >= 0) evidence = verbEvidence(tokens, idx);
+    } catch {
+      /* 分词失败就用文字证据 */
+    }
+  }
+  if (!evidence) evidence = evidenceFromText(sentence, text);
+
+  // 连用形候选：只有拿到证据才考虑，避免"凡是像变形的都加候选"
+  const verbs = evidence ? renyouCandidates(text) : [];
 
   const chain = [base.lemma];
+  // strong 证据下，动词原形才是这一处语境里的真实身份 → 作为更深一层
+  if (evidence === 'strong') {
+    for (const verb of verbs) if (!chain.includes(verb)) chain.push(verb);
+  }
 
   // 分词器常常一步跳到最深（惹かれて → 惹く），但界面上还想要中间那层。
   // 规则层若给出「再深化正好等于当前层」的候选，就把它补在链首。
@@ -143,12 +208,17 @@ export function buildChain({ surface, sentence, tokenizer }) {
   }
 
   // 默认展示最深一层；候选条按 深 → 浅 排列，最后留原选词兜底
-  const deepestFirst = [...chain].reverse();
+  const deep = [...chain].reverse();
+  // weak 证据只把动词放进候选，不改默认层
+  const extra = evidence === 'weak' ? verbs : [];
+  const candidates = dedupe([...deep, ...extra, ...base.candidates, text]).slice(0, 4);
   return {
-    lemma: deepestFirst[0],
-    chain,
-    candidates: dedupe([...deepestFirst, ...base.candidates, text]).slice(0, 4),
+    lemma: candidates[0],
+    // 链只表达"推导路径"，不含原选词与规则噪音（候选条另有数据）
+    chain: chain.filter((c) => c !== text),
+    candidates,
     source: base.source,
+    evidence,
   };
 }
 

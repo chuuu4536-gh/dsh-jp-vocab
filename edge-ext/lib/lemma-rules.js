@@ -156,3 +156,20 @@ export function candidatesFromRules(surface) {
 
   return [...found].filter((s) => s !== text).slice(0, 10);
 }
+
+/** 五段动词连用形词尾 → 辞书形词尾（収まり→収まる、読み→読む…）。 */
+const RENYOU_TO_U = { り: 'る', み: 'む', き: 'く', ぎ: 'ぐ', し: 'す', ち: 'つ', に: 'ぬ', び: 'ぶ' };
+
+/**
+ * 连用形候选：只给「一个可能的动词原形」，不作判断。
+ * 是否采纳由调用方的上下文证据决定（见 lemma.js 的 verbEvidence）。
+ * @param {string} surface
+ * @returns {string[]}
+ */
+export function renyouCandidates(surface) {
+  const text = String(surface ?? '').trim();
+  if (text.length < 2) return [];
+  const dict = RENYOU_TO_U[text[text.length - 1]];
+  if (!dict) return [];
+  return [text.slice(0, -1) + dict];
+}

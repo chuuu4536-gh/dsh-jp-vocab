@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "日语查词 · 星标收藏",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "选中日文单词即可查词，一键星标收藏到每日词汇表。",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA08qG3NrnxRvjaJmwj8QnQeMwHTqEiXBe3oEl+iI3UstDPTMieCcCqk58Bp4c9/+WTAzPLvMs3Oxfb6VKlxguCCMcHx1ZGnQh+q4xHqe56ZLp7rz2vXuCc3BfrZ6BL39p7cO5JNIYTLtwXi9n7iyWV7nG4Ie74Gkki0BBmL93qsazJUmXb+sqRAeLyFmhTJ6mu8PGPugW1i8WoI6K+RHaJ2KNjc8orRDqYmv7sEl30xRXgI2IpIvDIUKGRLsI2eAbAIlDnShUJVfhyv9wUQX/ykdb0VJtvxNccZpt5lWdu6Q3t4QoiPMwGNz2k6mqbMeCgVYTrOxulYFA2QR4BCL6IwIDAQAB",
   "permissions": ["storage", "nativeMessaging"],

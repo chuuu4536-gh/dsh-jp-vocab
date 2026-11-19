@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { candidatesFromRules } from '../lib/lemma-rules.js';
-import { resolveLemma, buildChain, buildCandidates, deepen, offsetTokens, pickToken } from '../lib/lemma.js';
+import { candidatesFromRules, renyouCandidates } from '../lib/lemma-rules.js';
+import {
+  resolveLemma, buildChain, buildCandidates, deepen, offsetTokens, pickToken,
+  verbEvidence, evidenceFromText,
+} from '../lib/lemma.js';
 import { parseEntry } from '../parse.js';
 
 const ROOT = path.join(import.meta.dirname, '..');
@@ -134,4 +137,48 @@ test('无分词器：链最多深一层，不会产出假词「惹い」', () =>
   const r = buildChain({ surface: '惹かれて' });
   assert.equal(r.chain.includes('惹い'), false, `实际 chain=${JSON.stringify(r.chain)}`);
   assert.ok(r.chain.length <= 2, `实际 chain=${JSON.stringify(r.chain)}`);
+});
+
+test('连用形候选：只给出一个动词原形', () => {
+  assert.deepEqual(renyouCandidates('収まり'), ['収まる']);
+  assert.deepEqual(renyouCandidates('読み'), ['読む']);
+  assert.deepEqual(renyouCandidates('話し'), ['話す']);
+  assert.deepEqual(renyouCandidates('猫'), []);
+});
+
+test('上下文证据：分词器判为动词 / 前接がをに = strong', () => {
+  const tokens = offsetTokens(tokenizer.tokenize('揺れが収まり通信を含む'));
+  const idx = tokens.findIndex((t) => t.surface_form === '収まり');
+  assert.equal(verbEvidence(tokens, idx), 'strong');
+
+  const t2 = offsetTokens(tokenizer.tokenize('休み時間になった'));
+  const i2 = t2.findIndex((t) => t.surface_form === '休み');
+  assert.equal(verbEvidence(t2, i2), null); // 句首、名词，无强证据
+});
+
+test('文字证据：が 前接 strong，汉字后接 weak，お 前缀不猜', () => {
+  assert.equal(evidenceFromText('揺れが収まり通信を含む', '収まり'), 'strong');
+  assert.equal(evidenceFromText('休み時間になった', '休み'), 'weak');
+  assert.equal(evidenceFromText('お祭り騒ぎが起きた', '祭り'), null);
+  assert.equal(evidenceFromText('', '収まり'), null);
+});
+
+test('没有分词器时：が+連用形 → 默认动词原形', () => {
+  const r = buildChain({ surface: '収まり', sentence: '揺れが収まり通信を含む' });
+  assert.equal(r.lemma, '収まる');
+  assert.ok(r.candidates.includes('収まり'));
+  assert.equal(r.evidence, 'strong');
+});
+
+test('没有分词器时：弱证据只加候选，不改默认层', () => {
+  const r = buildChain({ surface: '休み', sentence: '休み時間になった' });
+  assert.equal(r.lemma, '休み');
+  assert.ok(r.candidates.includes('休む'), `实际 candidates=${JSON.stringify(r.candidates)}`);
+  assert.equal(r.evidence, 'weak');
+});
+
+test('没有分词器时：お祭り 里的 祭り 不补动词', () => {
+  const r = buildChain({ surface: '祭り', sentence: 'お祭り騒ぎが起きた' });
+  assert.equal(r.lemma, '祭り');
+  assert.equal(r.candidates.includes('祭る'), false);
 });
