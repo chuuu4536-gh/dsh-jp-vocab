@@ -2,6 +2,8 @@
 
 在 Edge 里选中日文单词查词、点星收藏；每天用一条命令，把这些词变成一份按词性分组的 Markdown 汇总。
 
+[更新日志](CHANGELOG.md) · [Releases](https://github.com/chuuu4536-gh/dsh-jp-vocab/releases)
+
 本仓库是**三件套**，市场只能安装其中的 DSH 插件部分，另外两部分需要手动安装：
 
 | 组件 | 位置 | 作用 | 如何安装 |
