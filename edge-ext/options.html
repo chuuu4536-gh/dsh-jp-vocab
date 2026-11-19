@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>日语查词 · 设置</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { margin: 0; padding: 32px; font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+    main { max-width: 680px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p.sub { opacity: .6; margin: 0 0 24px; font-size: 13px; }
+    fieldset { border: 1px solid rgba(128,128,128,.3); border-radius: 12px; padding: 16px 18px; margin: 0 0 16px; }
+    legend { padding: 0 6px; font-weight: 600; }
+    label.field { display: block; margin: 12px 0 4px; font-size: 13px; }
+    input[type=text], select { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px;
+      border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit; font: inherit; }
+    .check { display: flex; align-items: center; gap: 8px; margin: 10px 0; font-size: 13px; }
+    .check input { width: 16px; height: 16px; }
+    .row { display: flex; gap: 8px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+    button { padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(128,128,128,.4);
+      background: rgba(128,128,128,.12); color: inherit; font: inherit; cursor: pointer; }
+    button.primary { background: #247bbf; border-color: #247bbf; color: #fff; }
+    #status { font-size: 13px; padding: 10px 12px; border-radius: 10px; background: rgba(128,128,128,.1); }
+    .ok { color: #2e7d32; } .bad { color: #c62828; }
+    .hint { font-size: 12px; opacity: .6; margin-top: 6px; }
+    .inline { display: flex; gap: 10px; align-items: center; }
+    .inline select { width: 120px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>日语查词 · 星标收藏</h1>
+  <p class="sub">选中日文单词 → 点「查词」→ 结果卡右下角星标收藏到当天词汇文件。</p>
+
+  <div id="status">正在检测本地宿主…</div>
+
+  <fieldset>
+    <legend>落盘位置</legend>
+    <label class="field" for="vocabDir">每日词汇文件目录（JSONL 真源）</label>
+    <input id="vocabDir" type="text" spellcheck="false" />
+    <label class="field" for="summariesDir">汇总文档输出目录（Markdown）</label>
+    <input id="summariesDir" type="text" spellcheck="false" />
+    <div class="hint">文件按业务日期命名：<code>YYYY-MM-DD.jsonl</code> / <code>YYYY-MM-DD.md</code>。</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>日界时间</legend>
+    <div class="inline">
+      <label for="dayStartHour">一天从</label>
+      <select id="dayStartHour">
+        <option value="0">00:00（自然日）</option>
+        <option value="1">01:00</option>
+        <option value="2">02:00</option>
+        <option value="3">03:00</option>
+        <option value="4">04:00</option>
+        <option value="5">05:00</option>
+        <option value="6">06:00</option>
+      </select>
+      <span>开始</span>
+    </div>
+    <div class="hint" id="dayPreview"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>汇总行为</legend>
+    <label class="field">生成今日汇总时</label>
+    <label class="check">
+      <input type="radio" name="enrichMode" value="auto" />
+      <span>自动联网补全例句/搭配，直接出完整版</span>
+    </label>
+    <label class="check">
+      <input type="radio" name="enrichMode" value="manual" />
+      <span>先出草稿，需要时再单独补全</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="overwrite" />
+      <span>同名汇总文件已存在时直接覆盖</span>
+    </label>
+    <label class="check">
+      <input type="checkbox" id="groupByPos" />
+      <span>按词性分组（名词 → 动词 → 形容词 → 形容动词 → 副词）</span>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>模板</legend>
+    <label class="field" for="templatePath">模板文件路径（留空使用内置模板）</label>
+    <input id="templatePath" type="text" spellcheck="false" placeholder="D:\...\my-template.md" />
+    <div class="hint">可用占位符：{{date}} {{count}} {{#words}} {{no}} {{word}} {{reading}} {{pitchText}} {{posText}} {{gloss}} {{examplesText}} {{context}} {{url}} {{note}} {{#groupHeading}}</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>查词</legend>
+    <label class="field" for="direction">词典方向</label>
+    <select id="direction">
+      <option value="auto">自动（纯汉字默认按日文查）</option>
+      <option value="jc">日中（日文 → 中文）</option>
+      <option value="cj">中日（中文 → 日文）</option>
+    </select>
+  </fieldset>
+
+  <div class="row">
+    <button class="primary" id="save">保存</button>
+    <button id="test">测试本地宿主</button>
+  </div>
+</main>
+<script src="options.js"></script>
+</body>
+</html>

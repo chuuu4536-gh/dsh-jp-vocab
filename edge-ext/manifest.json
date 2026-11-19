@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "日语查词 · 星标收藏",
+  "version": "0.4.0",
+  "description": "选中日文单词即可查词，一键星标收藏到每日词汇表。",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA08qG3NrnxRvjaJmwj8QnQeMwHTqEiXBe3oEl+iI3UstDPTMieCcCqk58Bp4c9/+WTAzPLvMs3Oxfb6VKlxguCCMcHx1ZGnQh+q4xHqe56ZLp7rz2vXuCc3BfrZ6BL39p7cO5JNIYTLtwXi9n7iyWV7nG4Ie74Gkki0BBmL93qsazJUmXb+sqRAeLyFmhTJ6mu8PGPugW1i8WoI6K+RHaJ2KNjc8orRDqYmv7sEl30xRXgI2IpIvDIUKGRLsI2eAbAIlDnShUJVfhyv9wUQX/ykdb0VJtvxNccZpt5lWdu6Q3t4QoiPMwGNz2k6mqbMeCgVYTrOxulYFA2QR4BCL6IwIDAQAB",
+  "permissions": ["storage", "nativeMessaging"],
+  "host_permissions": ["https://dict.asia/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["lib/geometry.cjs", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "日语查词设置"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "asia.dict.japanese.lookup",
+  "description": "日语查词 · 本地写入宿主（把星标词汇追加到每日 jsonl）",
+  "path": "D:\\DSH\\Plugin\\jp-vocab\\native-host\\host.exe",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://neblnajeachbgmnfibhjpmmlbelgfdjh/"]
+}

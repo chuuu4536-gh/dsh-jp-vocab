@@ -1,0 +1,6 @@
+- insert:
+    - id: jp-vocab
+      name: 'dsh-jp-vocab'
+      config:
+        vocabDir: 'D:\DSH\Plugin\jp-vocab\vocab'
+        summariesDir: 'D:\DSH\Plugin\jp-vocab\summaries'

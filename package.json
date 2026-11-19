@@ -1,0 +1,47 @@
+{
+  "name": "dsh-jp-vocab",
+  "version": "0.2.0",
+  "private": false,
+  "description": "日语生词日汇总：读取 Edge 扩展收藏的单词，按词性生成 Markdown 汇总。",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuuu4536-gh/dsh-jp-vocab.git"
+  },
+  "homepage": "https://github.com/chuuu4536-gh/dsh-jp-vocab#readme",
+  "bugs": {
+    "url": "https://github.com/chuuu4536-gh/dsh-jp-vocab/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "japanese",
+    "vocabulary",
+    "markdown"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lib/*.js",
+    "templates/*.md",
+    "locale/*.json",
+    "icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "dsh": "^0.2.2-rc.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

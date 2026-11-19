@@ -1,0 +1,22 @@
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 用户数据：词汇与汇总不随仓库分发
+vocab/
+summaries/
+
+# 密钥与本地状态
+*.pem
+*.key
+.data/
+*.log
+
+# 本机安装产物（由 install.ps1 生成）
+native-host/node-path.txt
+native-host/script-path.txt
+native-host/host.exe
+
+# 调查脚本与临时产物
+_research/
+.tmp*/
