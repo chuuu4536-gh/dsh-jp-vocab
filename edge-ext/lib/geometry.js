@@ -33,3 +33,21 @@ export function clampLeft(anchorLeft, anchorWidth, boxWidth, viewportWidth, pad 
   if (max < pad) return pad;
   return Math.min(Math.max(desired, pad), max);
 }
+
+/**
+ * 结果卡的期望位置（未做垂直夹取，调用方量完高度再夹）。
+ * @param {'top-right'|'anchor'} position
+ * @param {{left:number, top:number, width:number, bottom:number}} anchorRect 选区位置
+ * @param {number} boxWidth 卡片宽度
+ * @param {number} viewportWidth 视口宽度
+ * @param {number} [pad] 贴边留白
+ * @returns {{left:number, top:number}}
+ */
+export function cardBox(position, anchorRect, boxWidth, viewportWidth, pad = 16) {
+  if (position === 'top-right') {
+    return { left: viewportWidth - boxWidth - pad, top: pad };
+  }
+  const left = clampLeft(anchorRect.left, anchorRect.width, boxWidth, viewportWidth, 8);
+  const top = anchorRect.top - 44 < 8 ? anchorRect.bottom + 8 : anchorRect.top - 44;
+  return { left, top };
+}

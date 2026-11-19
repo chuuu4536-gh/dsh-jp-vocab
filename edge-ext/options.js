@@ -15,8 +15,14 @@ function renderDayPreview() {
 }
 
 async function loadSettings() {
-  const { direction = 'auto' } = await chrome.storage.sync.get({ direction: 'auto' });
+  const { direction = 'auto', cardPosition = 'top-right' } = await chrome.storage.sync.get({
+    direction: 'auto',
+    cardPosition: 'top-right',
+  });
   $('direction').value = direction;
+  for (const el of document.querySelectorAll('input[name=cardPosition]')) {
+    el.checked = el.value === (cardPosition === 'anchor' ? 'anchor' : 'top-right');
+  }
 }
 
 function applyConfig(c) {
@@ -59,7 +65,11 @@ $('save').addEventListener('click', async () => {
     templatePath: $('templatePath').value.trim(),
   };
   if (!config.vocabDir) return setStatus('词汇目录不能为空', 'bad');
-  await chrome.storage.sync.set({ direction: $('direction').value });
+  const posEl = document.querySelector('input[name=cardPosition]:checked');
+  await chrome.storage.sync.set({
+    direction: $('direction').value,
+    cardPosition: posEl ? posEl.value : 'top-right',
+  });
   const res = await chrome.runtime.sendMessage({ type: 'configure', config });
   if (res?.ok) {
     applyConfig(res.config || config);

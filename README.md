@@ -51,9 +51,11 @@ dsh plugin --profile <profile> add dsh-jp-vocab
 
 ## 使用
 
-1. 在网页上选中日文单词 → 点「查词」→ 结果卡里点右下角星标；
-2. 对 DSH 说「生成今日总结」，或直接调用 `jp_vocab_summary`；
-3. 汇总写到配置的 `summariesDir`，形如 `2026-11-18.md`。
+1. 在网页上选中日文单词 → 点「查词」；
+2. 结果卡默认出现在**网页右上角**（不遮挡正文）；想让它跟着选区走，可在扩展选项页把「结果卡位置」改成「所选词旁边」；
+3. 点结果卡右下角星标收藏；
+4. 对 DSH 说「生成今日总结」，或直接调用 `jp_vocab_summary`；
+5. 汇总写到配置的 `summariesDir`，形如 `2026-11-18.md`。
 
 词形还原由扩展侧完成（kuromoji + 规则兜底）：选「惹かれて」会落到最原本的「惹く」，候选条可切回中间层。
 
@@ -71,6 +73,13 @@ dsh plugin --profile <profile> add dsh-jp-vocab
 | `overwrite` | `true` | 同名汇总文件是否覆盖 |
 | `groupByPos` | `true` | 汇总按词性分组 |
 | `templatePath` | 空 | 自定义模板路径，空则用内置模板 |
+
+扩展侧另有两个**浏览器本地偏好**（存在 `chrome.storage.sync`，不进 `config.json`）：
+
+| 偏好 | 默认 | 说明 |
+|---|---|---|
+| `direction` | `auto` | 词典方向：自动 / 日中 / 中日 |
+| `cardPosition` | `top-right` | 结果卡位置：网页右上角 / 所选词旁边 |
 
 > `enrichMode` 是给 agent 的执行约定：插件本身不联网，联网补全由调用它的 agent 完成。
 

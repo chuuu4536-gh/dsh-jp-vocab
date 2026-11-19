@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 
-import { clampTop, clampLeft } from '../lib/geometry.js';
+import { clampTop, clampLeft, cardBox } from '../lib/geometry.js';
 const ROOT = path.join(import.meta.dirname, '..');
 const CSS = fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8');
 
@@ -43,6 +43,21 @@ test('clampLeft：右侧越界时左移', () => {
 
 test('clampLeft：盒子比视口宽时贴左', () => {
   assert.equal(clampLeft(100, 50, 400, 300), 8);
+});
+
+test('cardBox：默认贴网页右上角', () => {
+  const box = cardBox('top-right', { left: 100, top: 300, width: 50, bottom: 320 }, 360, 1200);
+  assert.deepEqual(box, { left: 1200 - 360 - 16, top: 16 });
+});
+
+test('cardBox：anchor 模式放在选区上方', () => {
+  const box = cardBox('anchor', { left: 500, top: 300, width: 60, bottom: 320 }, 360, 1200);
+  assert.equal(box.top, 300 - 44);
+});
+
+test('cardBox：选区贴顶时落到选区下方', () => {
+  const box = cardBox('anchor', { left: 500, top: 20, width: 60, bottom: 40 }, 360, 1200);
+  assert.equal(box.top, 48);
 });
 
 test('布局契约：卡片自己是滚动容器（不能再退回 flex + max-height）', () => {

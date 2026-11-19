@@ -9,7 +9,7 @@
   window.__jpVocabInjected = true;
 
   /** 构建号：改了样式后用它确认浏览器跑的是新代码，而不是旧缓存。 */
-  const BUILD = '0.4.1';
+  const BUILD = '0.5.0';
 
   const MAX_SELECTION = 24;   // 超过这个长度当句子处理，不弹查词
   const MIN_SELECTION = 1;
@@ -28,6 +28,14 @@
       const max = viewportWidth - boxWidth - pad;
       return max < pad ? pad : Math.min(Math.max(desired, pad), max);
     },
+    cardBox(position, anchorRect, boxWidth, viewportWidth, pad = 16) {
+      if (position === 'top-right') {
+        return { left: viewportWidth - boxWidth - pad, top: pad };
+      }
+      const left = this.clampLeft(anchorRect.left, anchorRect.width, boxWidth, viewportWidth, 8);
+      const top = anchorRect.top - 44 < 8 ? anchorRect.bottom + 8 : anchorRect.top - 44;
+      return { left, top };
+    },
   };
   /** @type {'idle'|'pill'|'card'} */
   let stage = 'idle';
@@ -41,6 +49,8 @@
   let anchorRect = null;
   let debounceTimer = 0;
   let lastSelectionText = '';
+  /** 结果卡位置：'top-right'（默认，网页右上角）| 'anchor'（所选词旁边） */
+  let cardPosition = 'top-right';
 
   const host = document.createElement('div');
   host.id = '__jp_vocab_host__';
@@ -126,20 +136,19 @@
     layer.innerHTML = '';
   }
 
-  function place(rect, width) {
+  function place(rect, width, { card = false } = {}) {
     const pad = 8;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const boxW = Math.min(width, vw - pad * 2);
 
-    layer.style.left = `${GEOM.clampLeft(rect.left, rect.width, boxW, vw, pad)}px`;
+    const box = GEOM.cardBox(card ? cardPosition : 'anchor', rect, boxW, vw);
+    layer.style.left = `${Math.max(pad, box.left)}px`;
     layer.style.top = '0px'; // 先摆到 0 再量高度，否则量到的是旧位置的高度
 
     // max-height 已经把卡片夹住，这里量到的是实际可见高度
     const height = layer.getBoundingClientRect().height;
-    let desired = rect.top - 44;
-    if (desired < pad) desired = rect.bottom + 8;
-    layer.style.top = `${GEOM.clampTop(desired, height, vh, pad)}px`;
+    layer.style.top = `${GEOM.clampTop(box.top, height, vh, pad)}px`;
   }
 
   function renderPill(rect) {
@@ -212,7 +221,7 @@
     layer.className = 'layer card';
     layer.innerHTML = parts.join('');
     layer.style.display = 'block';
-    place(anchorRect || { left: 20, top: 20, width: 0, bottom: 40 }, 360);
+    place(anchorRect || { left: 20, top: 20, width: 0, bottom: 40 }, 360, { card: true });
     layer.querySelector('.star').onclick = async (ev) => {
       ev.stopPropagation();
       await onStar(/** @type {HTMLButtonElement} */ (ev.currentTarget));
@@ -273,7 +282,7 @@
     layer.className = 'layer card';
     layer.innerHTML = '<div class="msg"><span class="spin"></span>　查询中…</div>';
     layer.style.display = 'block';
-    place(anchorRect || { left: 20, top: 20, width: 0, bottom: 40 }, 360);
+    place(anchorRect || { left: 20, top: 20, width: 0, bottom: 40 }, 360, { card: true });
 
     const res = await chrome.runtime.sendMessage({ type: 'lookup', word, sentence: currentContext, exact });
     if (stage !== 'card') return;
@@ -391,9 +400,23 @@
 
   window.addEventListener('resize', () => {
     if (stage === 'idle' || !anchorRect) return;
-    if (stage === 'card') place(anchorRect, 360);
+    if (stage === 'card') place(anchorRect, 360, { card: true });
     else place(anchorRect, 76);
   }, { passive: true });
+
+  // 结果卡位置偏好存在浏览器端（不写共享配置：它是纯 UI 偏好）
+  try {
+    chrome.storage.sync.get({ cardPosition: 'top-right' })
+      .then((saved) => { cardPosition = saved.cardPosition === 'anchor' ? 'anchor' : 'top-right'; })
+      .catch(() => {});
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'sync' || !changes.cardPosition) return;
+      cardPosition = changes.cardPosition.newValue === 'anchor' ? 'anchor' : 'top-right';
+      if (stage === 'card' && anchorRect) place(anchorRect, 360, { card: true });
+    });
+  } catch {
+    /* 存储不可用时保持默认 */
+  }
 
   console.info(`[jp-vocab] content script ${BUILD}`);
 })();
