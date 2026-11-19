@@ -4,8 +4,8 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const require = createRequire(import.meta.url);
-const { clampTop, clampLeft } = require('../lib/geometry.cjs');
+
+import { clampTop, clampLeft } from '../lib/geometry.js';
 const ROOT = path.join(import.meta.dirname, '..');
 const CSS = fs.readFileSync(path.join(ROOT, 'content.js'), 'utf8');
 
@@ -69,7 +69,7 @@ test('布局契约：body 不再自己滚动（否则会出现双层滚动）', 
 test('manifest：geometry 必须先于 content.js 注入', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
   const js = manifest.content_scripts?.[0]?.js ?? [];
-  assert.deepEqual(js, ['lib/geometry.cjs', 'content.js']);
+  assert.deepEqual(js, ['content.js']);
 });
 
 test('content.js 不再用 opacity 压暗正文文字', () => {

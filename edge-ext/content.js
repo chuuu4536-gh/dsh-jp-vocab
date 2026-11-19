@@ -9,7 +9,7 @@
   window.__jpVocabInjected = true;
 
   /** 构建号：改了样式后用它确认浏览器跑的是新代码，而不是旧缓存。 */
-  const BUILD = '0.4.0';
+  const BUILD = '0.4.1';
 
   const MAX_SELECTION = 24;   // 超过这个长度当句子处理，不弹查词
   const MIN_SELECTION = 1;
@@ -17,8 +17,8 @@
   const HAN = /[\u4e00-\u9fff]/;
   const DEBOUNCE = 120;
 
-  // lib/geometry.cjs 先于本文件注入；万一顺序被打乱也不至于整块 UI 崩掉
-  const GEOM = globalThis.__jpVocabGeometry || {
+  // 定位夹取逻辑内联在此，避免依赖额外注入的文件
+  const GEOM = {
     clampTop(desiredTop, boxHeight, viewportHeight, pad = 8) {
       const max = viewportHeight - boxHeight - pad;
       return max < pad ? pad : Math.min(Math.max(desiredTop, pad), max);
