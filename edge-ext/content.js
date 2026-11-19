@@ -9,7 +9,7 @@
   window.__jpVocabInjected = true;
 
   /** 构建号：改了样式后用它确认浏览器跑的是新代码，而不是旧缓存。 */
-  const BUILD = '0.5.0';
+  const BUILD = '0.5.1';
 
   const MAX_SELECTION = 24;   // 超过这个长度当句子处理，不弹查词
   const MIN_SELECTION = 1;
@@ -100,6 +100,7 @@
     .chip { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--bg-elev); color: var(--fg-2); }
     .body { padding: 4px 14px 10px; }
     .sense { margin: 8px 0; }
+    .pos-line { font-size: 11px; color: var(--fg-3); margin: 12px 0 2px; letter-spacing: .3px; }
     .sense-no { font-weight: 700; margin-right: 4px; }
     .ex-title { font-size: 11px; color: var(--fg-3); margin: 12px 0 4px; }
     .ex { font-size: 13px; padding: 3px 0 3px 10px; border-left: 2px solid var(--accent-line); margin: 4px 0; color: var(--fg-2); }
@@ -199,7 +200,14 @@
 
     parts.push('<div class="body">');
     if (senses.length) {
+      // 一个词条可能有多个词性块（如 都合 = 名・他サ + 副），分组标一下更清楚
+      const multiPos = new Set(senses.map((s) => s.pos).filter(Boolean)).size > 1;
+      let lastPos = '';
       for (const s of senses) {
+        if (multiPos && s.pos && s.pos !== lastPos) {
+          parts.push(`<div class="pos-line">${escapeHtml(s.pos)}</div>`);
+          lastPos = s.pos;
+        }
         parts.push(`<div class="sense"><span class="sense-no">${s.no}.</span>${escapeHtml(s.text)}</div>`);
       }
     } else {

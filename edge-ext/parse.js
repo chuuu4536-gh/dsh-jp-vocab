@@ -48,13 +48,13 @@ function pitchToNumber(sym) {
 /** 从一段解释 HTML 里拆出（释义, 例句[]）。 */
 function splitSense(commentHtml) {
   const examples = [];
-  for (const m of commentHtml.matchAll(/<p class="liju">([\s\S]*?)<\/p>/gi)) {
+  for (const m of commentHtml.matchAll(/<p\s+class=["']liju["'][^>]*>([\s\S]*?)<\/p>/gi)) {
     for (const line of m[1].split(/<br\s*\/?>/i)) {
       const text = stripTags(line);
       if (text && /[\u3040-\u30ff\u4e00-\u9fff]/.test(text)) examples.push(text);
     }
   }
-  const gloss = stripTags(commentHtml.replace(/<p class="liju">[\s\S]*?<\/p>/gi, ' '));
+  const gloss = stripTags(commentHtml.replace(/<p\s+class=["']liju["'][^>]*>[\s\S]*?<\/p>/gi, ' '));
   return { gloss, examples };
 }
 
@@ -79,9 +79,21 @@ export function parseEntry(html, meta = {}) {
   const romaji = stripTags((first.match(/title="罗马音"[^>]*>【([\s\S]*?)】/i) ?? [])[1] ?? '');
   const pitchSymbol = stripTags((first.match(/class=['"]tone_jp['"][^>]*>([\s\S]*?)<\/span>/i) ?? [])[1] ?? '');
 
-  const wordtypes = [...first.matchAll(/<p class="wordtype">【([\s\S]*?)】<\/p>/gi)]
-    .map((m) => stripTags(m[1]))
-    .filter(Boolean);
+  const commentHtml = (first.match(/<span id="comment_\d+" class="commentItem">([\s\S]*?)<\/span>\s*<\/div>/i) ?? [])[1] ?? '';
+
+  // 词性块形如 <p class="wordtype">【名・他サ】（注意：读音为◎）</p>。
+  // 不能假设 `】` 紧跟 `</p>`——有的词条在括号后面还有注记，
+  // 用 /【(.*?)】<\/p>/ 会一路吞到下一个块，把整段释义当成词性（都合 就是这么坏的）。
+  const sectionHtmls = commentHtml.split(/<p\s+class=["']wordtype["'][^>]*>/i).slice(1);
+  const sections = sectionHtmls.map((html) => {
+    const close = html.indexOf('</p>');
+    const head = close >= 0 ? html.slice(0, close) : '';
+    const body = close >= 0 ? html.slice(close + 4) : html;
+    const label = (stripTags(head).match(/【([\s\S]*?)】/) ?? [])[1] ?? stripTags(head);
+    return { label: label.trim(), body };
+  });
+
+  const wordtypes = sections.map((s) => s.label).filter(Boolean);
   const pos = wordtypes
     .filter((t) => !/相关惯用语|语法/.test(t))
     .flatMap((t) => t.split(/[•・/]/))
@@ -89,19 +101,26 @@ export function parseEntry(html, meta = {}) {
     .filter(Boolean);
   const extraPos = wordtypes.filter((t) => /相关惯用语|语法/.test(t));
 
-  const commentHtml = (first.match(/<span id="comment_\d+" class="commentItem">([\s\S]*?)<\/span>\s*<\/div>/i) ?? [])[1] ?? '';
-  const { gloss, examples } = splitSense(commentHtml);
   const commentText = stripTags(commentHtml);
   const wordtype = wordtypes[0] ?? '';
   // 活用页会写「…的连用形… → 食べる」，把原形抠出来
   const baseForm = (commentText.match(/→\s*([^\s<、。]+)/) ?? [])[1] ?? '';
 
+  // 按词性块分别拆释义与例句，避免一个块吞掉另一个块
+  const pieces = sections.length ? sections : [{ label: '', body: commentHtml }];
   const senses = [];
-  for (const m of gloss.matchAll(/（(\d+)）([\s\S]*?)(?=（\d+）|$)/g)) {
-    const body = m[2].trim();
-    if (body) senses.push({ no: Number(m[1]), text: body });
+  const examples = [];
+  for (const piece of pieces) {
+    const parsed = splitSense(piece.body);
+    examples.push(...parsed.examples);
+    const matched = [];
+    for (const m of parsed.gloss.matchAll(/（(\d+)）([\s\S]*?)(?=（\d+）|$)/g)) {
+      const body = m[2].trim();
+      if (body) matched.push({ no: Number(m[1]), text: body, pos: piece.label });
+    }
+    if (!matched.length && parsed.gloss) matched.push({ no: 1, text: parsed.gloss, pos: piece.label });
+    senses.push(...matched);
   }
-  if (!senses.length && gloss) senses.push({ no: 1, text: gloss });
 
   return {
     word,
