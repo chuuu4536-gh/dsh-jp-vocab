@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  localDate, readDay, mergeSupplements, buildSummary, loadTemplate,
+  localDate, readDay, mergeSupplements, buildSummary, loadTemplate, loadPosAbbrev,
 } from './lib/format.js';
 import { resolveConfig, writeSharedConfig, configPath } from './lib/config.js';
 
@@ -20,6 +20,7 @@ export const name = 'jp-vocab';
 export const inject = ['tools'];
 
 const TEMPLATE_PATH = fileURLToPath(new URL('./templates/daily-summary.md', import.meta.url));
+const POS_ABBREV_PATH = fileURLToPath(new URL('./templates/pos-abbrev.json', import.meta.url));
 
 /** 把对象包成给模型看的文本块（与已装插件的约定一致）。 */
 function textOutput(schema) {
@@ -48,7 +49,8 @@ function publicSettings(settings) {
     enrichMode: settings.enrichMode,
     overwrite: settings.overwrite,
     groupByPos: settings.groupByPos,
-    templatePath: settings.templatePath || '(内置模板)',
+    includeContext: settings.includeContext,
+    templatePath: settings.templatePath || '(内置版式)',
     configFile: configPath(),
   };
 }
@@ -199,13 +201,16 @@ export function apply(ctx, rawConfig) {
         }
 
         const merged = mergeSupplements(words, Array.isArray(raw?.supplements) ? raw.supplements : []);
-        const templatePath = settings.templatePath || TEMPLATE_PATH;
-        const { template, usedFallback } = loadTemplate(templatePath);
+        // 没显式配模板就用内置版式（只有日期标题 + 大纲词条）
+        const { template, usedFallback } = loadTemplate(settings.templatePath);
+        const posAbbrev = loadPosAbbrev(settings.posAbbrevPath || POS_ABBREV_PATH);
         const { markdown, count } = buildSummary({
           date,
           words: merged,
-          template,
+          template: template || null,
           groupByPos: settings.groupByPos,
+          includeContext: settings.includeContext,
+          posAbbrev,
         });
 
         fs.mkdirSync(settings.summariesDir, { recursive: true });

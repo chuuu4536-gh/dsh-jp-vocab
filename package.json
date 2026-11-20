@@ -1,6 +1,6 @@
 {
   "name": "dsh-jp-vocab",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": false,
   "description": "日语生词日汇总：读取 Edge 扩展收藏的单词，按词性生成 Markdown 汇总。",
   "license": "MIT",

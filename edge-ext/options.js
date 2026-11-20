@@ -33,6 +33,7 @@ function applyConfig(c) {
   for (const el of document.querySelectorAll('input[name=enrichMode]')) el.checked = el.value === mode;
   $('overwrite').checked = c.overwrite !== false;
   $('groupByPos').checked = c.groupByPos !== false;
+  $('includeContext').checked = c.includeContext === true;
   $('templatePath').value = c.templatePath || '';
   renderDayPreview();
 }
@@ -62,6 +63,7 @@ $('save').addEventListener('click', async () => {
     enrichMode: modeEl ? modeEl.value : 'auto',
     overwrite: $('overwrite').checked,
     groupByPos: $('groupByPos').checked,
+    includeContext: $('includeContext').checked,
     templatePath: $('templatePath').value.trim(),
   };
   if (!config.vocabDir) return setStatus('词汇目录不能为空', 'bad');

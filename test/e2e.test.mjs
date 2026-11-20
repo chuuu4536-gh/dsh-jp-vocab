@@ -42,12 +42,16 @@ test('选中「勉強」→ 落盘 → 生成当日总结', () => {
   assert.equal(words.length, 1);
   assert.equal(words[0].reading, 'べんきょう');
 
-  const { template } = loadTemplate(TEMPLATE);
-  const { markdown, count } = buildSummary({ date: saved.date, words, template });
+  const { markdown, count } = buildSummary({
+    date: saved.date,
+    words,
+    includeContext: true,
+  });
   assert.equal(count, 1);
-  assert.match(markdown, /共 1 个词/);
-  assert.match(markdown, /べんきょう/);
-  assert.match(markdown, /彼は毎日勉強している。/);
+  assert.match(markdown, /^# \d{4}-\d{2}-\d{2}/);
+  assert.match(markdown, /べんきょう（勉強）◎/);
+  assert.match(markdown, /- 名·自他·三类：用功学习/);
+  assert.match(markdown, /- 原文：彼は毎日勉強している。/);
 
   // 4. 同词再收藏：计数 +1，不产生第二条
   core.handleSave({ type: 'save', entry, context: '别的句子' }, config);

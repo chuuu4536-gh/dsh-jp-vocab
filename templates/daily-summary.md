@@ -1,38 +1,10 @@
-# {{date}} 今日新词
+<!--
+  自定义模板示例。默认不启用：只有在本插件配置里把 templatePath 指向本文件才会用到。
+  可用变量：{{date}} {{count}}，以及每个词条的 {{header}} {{word}} {{reading}} {{pitch}} {{posText}} {{gloss}} {{block}}
+  {{block}} 是内置版式算好的整块（词头 + 大纲），自定义时最省事。
+-->
+# {{date}}
 
-> 共 {{count}} 个词 · 由「日语查词 · 星标收藏」自动汇总
+{{#words}}{{block}}
 
-{{#words}}
-{{#groupHeading}}
-**{{groupHeading}}**
-
-{{/groupHeading}}
-## {{no}}. {{word}}
-
-| 项目 | 内容 |
-| --- | --- |
-| 读音 | {{reading}}{{pitchText}} |
-| 词性 | {{posText}} |
-| 释义 | {{gloss}} |
-{{#collocationsText}}
-| 搭配 | {{collocationsText}} |
-{{/collocationsText}}
-
-**例句**
-
-{{examplesText}}
-{{#context}}
-
-**原文语境**
-
-{{context}}
-{{/context}}
-{{#note}}
-
-**备注**：{{note}}
-{{/note}}
-
-[dict.asia]({{url}})
-
----
 {{/words}}

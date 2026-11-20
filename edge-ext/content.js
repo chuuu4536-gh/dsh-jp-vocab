@@ -9,7 +9,7 @@
   window.__jpVocabInjected = true;
 
   /** 构建号：改了样式后用它确认浏览器跑的是新代码，而不是旧缓存。 */
-  const BUILD = '1.0.0';
+  const BUILD = '1.1.0';
 
   const MAX_SELECTION = 24;   // 超过这个长度当句子处理，不弹查词
   const MIN_SELECTION = 1;
@@ -338,6 +338,17 @@
     return sel.toString().trim();
   }
 
+  /** 抓包含选中词的完整句子：向前到上一个句末标点，向后到下一个句末标点（含）。 */
+  function sentenceBounds(text, at, len) {
+    const END = /[。．！？!?]/;
+    let start = at;
+    while (start > 0 && !END.test(text[start - 1])) start -= 1;
+    let end = at + len;
+    while (end < text.length && !END.test(text[end])) end += 1;
+    if (end < text.length) end += 1;
+    return text.slice(start, end).trim().slice(0, 200);
+  }
+
   function sentenceAround() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return '';
@@ -346,8 +357,8 @@
     const text = (el?.innerText || el?.textContent || '').replace(/\s+/g, ' ').trim();
     if (!text) return '';
     const at = text.indexOf(currentWord);
-    if (at < 0) return text.slice(0, 120);
-    return text.slice(Math.max(0, at - 60), at + currentWord.length + 60).trim();
+    if (at < 0) return text.slice(0, 200);
+    return sentenceBounds(text, at, currentWord.length);
   }
 
   function evaluateSelection() {
