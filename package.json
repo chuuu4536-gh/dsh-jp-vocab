@@ -30,6 +30,7 @@
     "index.js",
     "lib/*.js",
     "templates/*.md",
+    "templates/*.json",
     "locale/*.json",
     "icon.svg",
     "cordis.patch.yml",
