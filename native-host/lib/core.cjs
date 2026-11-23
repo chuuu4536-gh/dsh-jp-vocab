@@ -206,7 +206,7 @@ function dispatch(msg, root) {
   const config = readConfig(root);
   switch (msg && msg.type) {
     case 'ping':
-      return { ok: true, version: '1.1.0', config, pid: process.pid };
+      return { ok: true, version: '1.1.1', config, pid: process.pid };
     case 'check':
       return handleCheck(msg, config);
     case 'save':

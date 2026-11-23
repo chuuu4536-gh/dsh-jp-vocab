@@ -49,20 +49,19 @@ test('例句与搭配拆分', () => {
   assert.deepEqual(splitCollocation('意地を張る：固执己见'), { jp: '意地を張る', zh: '固执己见' });
 });
 
-test('单词块：标题加粗、例与搭配不缩进、无空行/备注/链接', () => {
+test('单词块：标题加粗、例为二级大纲、无空行/备注/链接', () => {
   const block = wordBlock(word, 0);
   const expected = [
     '**いじ（意地）②**',
     '- 名：心性、性情；固执、倔强',
     '- 常见搭配',
-    '- 意地が悪い：心眼坏、故意刁难',
-    '- 意地を張る：固执己见',
+    '\t- 意地が悪い：心眼坏、故意刁难',
+    '\t- 意地を張る：固执己见',
     '- 例',
-    '- つまらない**意地**を張るな。（不要固执己见。）',
+    '\t- つまらない**意地**を張るな。（不要固执己见。）',
   ].join('\n');
   assert.equal(block, expected);
   assert.ok(!block.includes('\n\n'), '词内不应有空行');
-  assert.ok(!block.includes('\t'), '不应使用制表符缩进');
   assert.ok(!block.includes('http'), '不应出现链接');
 });
 
