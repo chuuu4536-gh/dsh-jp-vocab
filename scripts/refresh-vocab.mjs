@@ -29,6 +29,7 @@ export function mergeRefreshed(record, entry) {
     senses: Array.isArray(entry.senses) && entry.senses.length ? entry.senses : record.senses,
     gloss: entry.gloss || record.gloss,
     examples: Array.isArray(entry.examples) ? entry.examples : record.examples,
+    etymology: entry.etymology ?? record.etymology ?? null,
     url: entry.url || record.url,
     refreshedAt: new Date().toISOString(),
   };

@@ -142,6 +142,23 @@ test('supplements 支持 {jp,zh} 形式', () => {
   assert.deepEqual(merged[0].examples[0], { jp: '意地になる。', zh: '固执起来。' });
 });
 
+test('片假名词：标题只写片假名+音调，释义前标外来词来源', () => {
+  const w = {
+    word: 'インフラ', reading: 'いんふら', pitch: '◎', pos: ['名'],
+    etymology: { lang: '英', word: 'infrastructure' },
+    senses: [{ text: '｢インフラストラクチャー｣的略称，基础设施，基础建设。' }],
+    examples: ['アジアインフラ投資銀行。／亚洲基础设施投资银行。'],
+  };
+  assert.equal(headerLine(w), 'インフラ◎');
+  const block = wordBlock(w, 0);
+  assert.match(block, /^- 名：（英infrastructure）基础设施，基础建设$/m);
+  assert.match(block, /^- 例$/m);
+});
+
+test('非片假名词仍带读音', () => {
+  assert.equal(headerLine({ word: '猫', reading: 'ねこ', pitch: '①' }), 'ねこ（猫）①');
+});
+
 test('按词性分组排序', () => {
   const words = [
     { word: '走る', reading: 'はしる', pitch: '②', pos: ['自五'], senses: [{ text: '跑。' }] },

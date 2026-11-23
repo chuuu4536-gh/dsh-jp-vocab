@@ -49,8 +49,7 @@ test('未命中页面返回 null', () => {
   assert.equal(parseEntry('<html><body>没有结果</body></html>'), null);
 });
 
-test('都合：词性不会被整段释义污染，多词性块各自拆开', () => {
-  const e = parseEntry(load('都合'));
+test('都合：词性不会被整段释义污染，多词性块各自拆开', () => {  const e = parseEntry(load('都合'));
   assert.deepEqual(e.pos, ['名', '他サ', '副']);
   assert.ok(!e.pos.some((p) => p.includes('（注意')), `词性里混入了注记：${JSON.stringify(e.pos)}`);
   assert.ok(e.senses.length >= 4, `释义条数 ${e.senses.length}`);
@@ -58,6 +57,13 @@ test('都合：词性不会被整段释义污染，多词性块各自拆开', ()
     assert.ok(s.text.length < 160, `单条释义过长（${s.text.length} 字）：${s.text.slice(0, 30)}…`);
   }
   assert.ok(e.examples.length >= 10, `例句数 ${e.examples.length}`);
+});
+
+test('外来词：从词性块里抽出借词语言与原词', () => {
+  const e = parseEntry(load('インフラ'));
+  assert.deepEqual(e.pos, ['名']);
+  assert.deepEqual(e.etymology, { lang: '英', word: 'infrastructure' });
+  assert.equal(e.pitch, '◎');
 });
 
 test('方向判定与 URL 构造', () => {

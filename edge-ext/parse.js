@@ -89,9 +89,25 @@ export function parseEntry(html, meta = {}) {
     const close = html.indexOf('</p>');
     const head = close >= 0 ? html.slice(0, close) : '';
     const body = close >= 0 ? html.slice(close + 4) : html;
-    const label = (stripTags(head).match(/【([\s\S]*?)】/) ?? [])[1] ?? stripTags(head);
-    return { label: label.trim(), body };
+    const headText = stripTags(head);
+    const label = (headText.match(/【([\s\S]*?)】/) ?? [])[1] ?? headText;
+
+    // 外来词：词性块里会写【英】infrastructure（或【英】infrastructureの略）
+    const langMatch = headText.match(/【(英|仏|独|露|伊|西|中|蘭|ポ|ギ|米)】/);
+    let etymology = null;
+    if (langMatch) {
+      const rest = headText.slice(headText.indexOf(langMatch[0]) + langMatch[0].length);
+      const origin = stripTags(rest)
+        .replace(/【[^】]*】/g, '')
+        .replace(/の略.*$/, '')
+        .trim();
+      if (origin) etymology = { lang: langMatch[1], word: origin };
+    }
+
+    return { label: label.trim(), body, etymology };
   });
+
+  const etymology = sections.find((s) => s.etymology)?.etymology ?? null;
 
   const wordtypes = sections.map((s) => s.label).filter(Boolean);
   const pos = wordtypes
@@ -136,6 +152,7 @@ export function parseEntry(html, meta = {}) {
     examples,
     wordTypesRaw: wordtypes,
     wordtype,
+    etymology,
     baseForm,
     isConjugation: wordtype === '活用' || wordtypes.includes('活用'),
     url: meta.url ?? null,
